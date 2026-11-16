@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#101820">
+<title>WORLD DOMINION | سيادة العالم</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#101820;--panel:#17232d;--panel2:#1d2c38;--line:#304351;--gold:#d8b45a;--txt:#edf2f5;--muted:#9aabb6;--green:#5dc28b;--red:#e47777}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}
+header{padding:13px 15px;background:#0c1319;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.brand{font-weight:900;letter-spacing:1px;color:var(--gold);font-size:17px}.sub{font-size:11px;color:var(--muted);margin-top:3px}
+.pill{border:1px solid var(--line);border-radius:20px;padding:6px 9px;font-size:11px;color:var(--muted);white-space:nowrap}
+main{max-width:1100px;margin:auto;padding:10px;display:grid;gap:10px}
+#map{height:43vh;min-height:270px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#15232c}
+.mapwrap{position:relative}.maptag{position:absolute;z-index:500;top:9px;right:9px;background:#101820dd;border:1px solid var(--line);padding:7px 10px;border-radius:8px;font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px}
+.stat small{display:block;color:var(--muted);font-size:11px}.stat b{display:block;font-size:17px;margin-top:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+h2{font-size:14px;margin:0 0 9px;color:var(--gold)}
+button,select{font:inherit}button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px 8px;font-size:12px;cursor:pointer}
+button:active{transform:scale(.98)}button.primary{background:#6e5827;border-color:#a88a43;color:#fff}button:disabled{opacity:.4}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.actiondesc{font-size:10px;color:var(--muted);display:block;margin-top:4px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #263743;font-size:12px}
+.row:last-child{border:0}.muted{color:var(--muted)}.good{color:var(--green)}.bad{color:var(--red)}
+#log{height:130px;overflow:auto;font-size:11px;line-height:1.7;color:#c5d0d7}
+#log div{border-bottom:1px solid #263743;padding:4px 0}
+footer{text-align:center;color:#758894;font-size:10px;padding:7px}
+.leaflet-container{background:#172833}.leaflet-control-attribution{font-size:8px!important}
+@media(min-width:760px){main{grid-template-columns:1.2fr .8fr;align-items:start} .mapwrap{grid-row:span 3}#map{height:68vh}.stats{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header>
+ <div><div class="brand">WORLD DOMINION</div><div class="sub">سيادة العالم · النسخة التجريبية 0.1</div></div>
+ <div class="pill" id="datePill">السنة 2026 · اليوم 1</div>
+</header>
+<main>
+ <section class="mapwrap">
+  <div class="maptag">🌍 اختر دولة من الخريطة</div>
+  <div id="map"></div>
+ </section>
+ <section>
+  <div class="stats">
+   <div class="stat"><small>💰 الخزينة</small><b id="money">500M$</b></div>
+   <div class="stat"><small>👥 السكان</small><b id="population">45M</b></div>
+   <div class="stat"><small>📈 الدخل اليومي</small><b id="income">+8M$</b></div>
+  </div>
+ </section>
+ <section class="panel">
+  <h2>🏛️ الدولة المختارة</h2>
+  <div class="row"><span class="muted">الدولة</span><b id="countryName">العراق</b></div>
+  <div class="row"><span class="muted">الاستقرار</span><b id="stability">72%</b></div>
+  <div class="row"><span class="muted">القوة العسكرية</span><b id="army">35,000</b></div>
+  <div class="row"><span class="muted">الموارد</span><b id="resources">نفط 70 · غذاء 55 · حديد 30</b></div>
+ </section>
+ <section class="panel">
+  <h2>🏗️ تطوير الدولة</h2>
+  <div class="actions">
+   <button onclick="build('factory')">🏭 بناء مصنع<span class="actiondesc">التكلفة 80M$ · يزيد الدخل</span></button>
+   <button onclick="build('rail')">🚆 مدّ سكة حديد<span class="actiondesc">التكلفة 60M$ · يحسن النقل</span></button>
+   <button onclick="build('road')">🛣️ تطوير الطرق<span class="actiondesc">التكلفة 40M$ · يحسن الإنتاج</span></button>
+   <button onclick="build('power')">⚡ محطة كهرباء<span class="actiondesc">التكلفة 55M$ · تدعم الصناعة</span></button>
+   <button onclick="build('farm')">🌾 مشروع زراعي<span class="actiondesc">التكلفة 35M$ · يزيد الغذاء</span></button>
+   <button onclick="recruit()">🪖 تجنيد قوات<span class="actiondesc">التكلفة 25M$ · 5,000 جندي</span></button>
+  </div>
+  <div class="row"><span class="muted">المصانع</span><b id="factories">2</b></div>
+  <div class="row"><span class="muted">شبكة السكك الحديدية</span><b id="rail">450 كم</b></div>
+  <div class="row"><span class="muted">الطرق</span><b id="roads">1,200 كم</b></div>
+  <div class="row"><span class="muted">محطات الكهرباء</span><b id="power">3</b></div>
+  <div class="row"><span class="muted">المزارع</span><b id="farms">4</b></div>
+ </section>
+ <section class="panel">
+  <h2>🤝 الدول الأخرى — ذكاء اصطناعي أساسي</h2>
+  <div class="row"><span>🇸🇦 السعودية</span><span class="muted">علاقات: جيدة</span></div>
+  <div class="row"><span>🇹🇷 تركيا</span><span class="muted">علاقات: محايدة</span></div>
+  <div class="row"><span>🇮🇷 إيران</span><span class="muted">علاقات: متوترة</span></div>
+  <div class="row"><span>🇺🇸 الولايات المتحدة</span><span class="muted">قوة كبرى</span></div>
+  <div class="row"><span>🇨🇳 الصين</span><span class="muted">قوة اقتصادية</span></div>
+  <div class="muted" style="font-size:10px;margin-top:7px">هذه الدول تمثّل خصوم/شركاء تجريبيين؛ قرارات الذكاء الاصطناعي محدودة في هذه النسخة.</div>
+ </section>
+ <section class="panel">
+  <h2>📰 سجل الأحداث</h2>
+  <div id="log"><div>مرحباً بك أيها القائد. اختر دولة وابدأ ببناء اقتصادك.</div></div>
+  <div style="display:flex;gap:7px;margin-top:8px">
+   <button class="primary" style="flex:1" onclick="saveGame()">💾 حفظ اللعبة</button>
+   <button style="flex:1" onclick="resetGame()">↻ إعادة البداية</button>
+  </div>
+ </section>
+</main>
+<footer>نموذج تجريبي محلي · لا توجد حسابات أو سيرفرات أو لاعبين حقيقيين في هذه النسخة</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const initial={country:"Iraq",name:"العراق",money:500,population:45,income:8,stability:72,army:35000,oil:70,food:55,iron:30,factories:2,rail:450,roads:1200,power:3,farms:4,day:1,year:2026};
+let s={...initial};
+const names={"Iraq":"العراق","Saudi Arabia":"السعودية","Iran":"إيران","Turkey":"تركيا","United States of America":"الولايات المتحدة","China":"الصين","Russian Federation":"روسيا","India":"الهند","France":"فرنسا","Germany":"ألمانيا","United Kingdom":"بريطانيا","Egypt":"مصر","Japan":"اليابان","Brazil":"البرازيل","Australia":"أستراليا","Canada":"كندا","Ukraine":"أوكرانيا","Pakistan":"باكستان"};
+const map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([28,25],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:6,attribution:'© OpenStreetMap'}).addTo(map);
+let geoLayer;
+function log(t){let d=document.createElement('div');d.textContent='• '+t;document.getElementById('log').prepend(d)}
+function render(){
+ document.getElementById('money').textContent=Math.round(s.money)+'M$';
+ document.getElementById('population').textContent=s.population+'M';
+ document.getElementById('income').textContent='+'+s.income+'M$';
+ document.getElementById('countryName').textContent=s.name;
+ document.getElementById('stability').textContent=s.stability+'%';
+ document.getElementById('army').textContent=s.army.toLocaleString('en-US');
+ document.getElementById('resources').textContent=`نفط ${s.oil} · غذاء ${s.food} · حديد ${s.iron}`;
+ document.getElementById('factories').textContent=s.factories;
+ document.getElementById('rail').textContent=s.rail.toLocaleString('en-US')+' كم';
+ document.getElementById('roads').textContent=s.roads.toLocaleString('en-US')+' كم';
+ document.getElementById('power').textContent=s.power;
+ document.getElementById('farms').textContent=s.farms;
+ document.getElementById('datePill').textContent=`السنة ${s.year} · اليوم ${s.day}`;
+}
+function selectCountry(code,english){
+ s.country=code;s.name=names[english]||english||code;
+ if(code!=="IRQ" && code!=="Iraq"){
+   s.money=350;s.population=30;s.income=6;s.stability=68;s.army=25000;
+   s.oil=35;s.food=45;s.iron=35;s.factories=2;s.rail=300;s.roads=900;s.power=2;s.farms=3;
+ }
+ log('تم اختيار دولة '+s.name+'. هذه قيم أولية تجريبية وليست إحصاءات واقعية.');
+ render();
+}
+fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+.then(r=>r.json()).then(data=>{
+ geoLayer=L.geoJSON(data,{style:f=>({color:'#9aafbd',weight:.6,fillColor:'#29485a',fillOpacity:.55}),
+ onEachFeature:(f,l)=>{
+  const p=f.properties||{}, en=p.ADMIN||p.name||p.name_en||'دولة';
+  l.bindTooltip(en,{sticky:true});
+  l.on('click',()=>selectCountry(p.ISO_A3||p['ISO3166-1-Alpha-3']||en,en));
+ }}).addTo(map);
+}).catch(()=>log('تعذر تحميل حدود الدول. تحقق من اتصال الإنترنت ثم أعد تحميل الصفحة.'));
+function build(type){
+ const cfg={factory:[80,'factories',1,'تم إنشاء مصنع جديد. زادت القدرة الصناعية.'],rail:[60,'rail',150,'تم تمديد 150 كم من السكك الحديدية. تحسنت قدرة نقل البضائع والركاب.'],road:[40,'roads',200,'تم تطوير 200 كم من الطرق.'],power:[55,'power',1,'تم إنشاء محطة كهرباء جديدة.'],farm:[35,'farms',1,'تم إنشاء مشروع زراعي جديد.']};
+ let [cost,key,amount,msg]=cfg[type];
+ if(s.money<cost){log('الخزينة لا تكفي لتنفيذ المشروع.');return}
+ s.money-=cost;s[key]+=amount;
+ if(type==='factory')s.income+=2;
+ if(type==='rail')s.income+=0.5;
+ if(type==='road')s.income+=0.3;
+ if(type==='power')s.income+=0.5;
+ if(type==='farm')s.food+=5;
+ log(msg);render();
+}
+function recruit(){if(s.money<25){log('الخزينة لا تكفي للتجنيد.');return}s.money-=25;s.army+=5000;log('تم تجنيد 5,000 جندي.');render()}
+function saveGame(){localStorage.setItem('wd-save',JSON.stringify(s));log('تم حفظ تقدمك على هذا المتصفح والجهاز.')}
+function resetGame(){if(!confirm('هل تريد حذف تقدمك والبدء من جديد؟'))return;s={...initial};localStorage.removeItem('wd-save');log('بدأت لعبة جديدة.');render()}
+let old=localStorage.getItem('wd-save');if(old){try{s={...initial,...JSON.parse(old)}}catch(e){}}
+render();
+// يوم واحد في اللعبة يمر كل ساعة حقيقية. الزيادة المالية تُحسب كل دقيقة كتقريب تجريبي.
+setInterval(()=>{s.money+=s.income/60;s.day++;if(s.day>30){s.day=1;s.year++}render();},60000);
+</script>
+</body>
+</html>
